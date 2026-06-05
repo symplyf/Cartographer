@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         version:
-          - "12.1.0"
+          - "12.1.2"
 
     steps:
       - name: Clone Repository
