@@ -31,7 +31,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Install Ghidra ${{matrix.version}}
-        uses: antoniovazquezblanco/setup-ghidra@v2.0.3
+        uses: antoniovazquezblanco/setup-ghidra@v{{matrix.version}}
         with:
           version: ${{matrix.version}}
 
