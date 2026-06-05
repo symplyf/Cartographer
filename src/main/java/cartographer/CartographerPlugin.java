@@ -70,6 +70,7 @@ import cartographer.CoverageFile.*;
     category = PluginCategoryNames.ANALYSIS,
     shortDescription = "Code coverage parser",
     description = "Plugin for loading and processing code coverage data."
+    servicesRequired = { ColorizingService.class, DecompilerHighlightService.class }
 )
 //@formatter:on
 
@@ -442,28 +443,25 @@ public class CartographerPlugin extends ProgramPlugin {
         // Get the colorizer
         ColorizingService colorizer = tool.getService(ColorizingService.class);
 
-        // Clear out the current highlights
-        int transactionId = currentProgram.startTransaction("Clearing Listing Data Highlights");
-        colorizer.clearAllBackgroundColors();
+        try (db.Transaction transaction = currentProgram.openTransaction("Clearing Listing Data Highlights")) {
+            colorizer.clearAllBackgroundColors();
 
-        // Set background color for each block
-        file.getCoverageFunctions().forEach((function, ccFunc) -> {
+            // Set background color for each block
+            file.getCoverageFunctions().forEach((function, ccFunc) -> {
 
-            for (CodeBlock block : ccFunc.getBlocksHit()) {
-                colorizer.setBackgroundColor(block, provider.getListingColor());
+                for (CodeBlock block : ccFunc.getBlocksHit()) {
+                    colorizer.setBackgroundColor(block, provider.getListingColor());
+                }
+            });
+
+            // Only run if current function exists under the cursor
+            if (currentFunction != null) {
+
+                // Update the decompiler highlights for the current function
+                CoverageFunction ccFunc = file.getCoverageFunction(currentFunction);
+                colorizeDecompiler(ccFunc);
             }
-        });
-
-        // Only run if current function exists under the cursor
-        if (currentFunction != null) {
-
-            // Update the decompiler highlights for the current function
-            CoverageFunction ccFunc = file.getCoverageFunction(currentFunction);
-            colorizeDecompiler(ccFunc);
         }
-
-        // End the transaction
-        currentProgram.endTransaction(transactionId, true);
     }
 
     /**
